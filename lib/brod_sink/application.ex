@@ -11,7 +11,7 @@ defmodule BrodSink.Application do
     Logger.metadata(starting: true)
     Logger.info("Starting app")
 
-    topic_names = ["team_hierarchy"]
+    topic_names = ["brod_testing"]
 
     children = [
       # worker(BrodSink.ToyConsumer, topic_names)

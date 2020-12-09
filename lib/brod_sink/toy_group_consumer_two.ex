@@ -29,7 +29,7 @@ defmodule BrodSink.ToyGroupTwoConsumer do
           # GroupConfig
           group_config: [offset_commit_policy: :commit_to_kafka_v2, offset_commit_interval_seconds: 5],
           # ConsumerConfig
-          consumer_config: [debug: true, begin_offset: :earliest, offset_reset_policy: :reset_to_earliest],
+          consumer_config: [begin_offset: :earliest, offset_reset_policy: :reset_to_earliest],
           # CbMod
           cb_module: __MODULE__,
           # CbInitArg
@@ -44,7 +44,7 @@ defmodule BrodSink.ToyGroupTwoConsumer do
   def init(init_info = %{partition: partition, topic: topic, commit_fun: commit_fun}, cb_config) do
     Logger.metadata(partition_id: partition)
     Logger.info("Starting group subscriber v2, partition #{partition}, topic: #{topic}")
-    Logger.info("Init Info: #{inspect(init_info)}, Cb Config: #{inspect(cb_config)}")
+    # Logger.info("Init Info: #{inspect(init_info)}, Cb Config: #{inspect(cb_config)}")
 
     {:ok, %{partition: partition, topic: topic, commit_fun: commit_fun}}
   end
@@ -75,6 +75,8 @@ defmodule BrodSink.ToyGroupTwoConsumer do
       "5" ->
         # Tell the consumer to do nothing, cb might be used.
         {:ok, state}
+      _ ->
+        {:ok, :commit, state}
     end
   end
 end
