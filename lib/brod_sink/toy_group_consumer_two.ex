@@ -30,6 +30,7 @@ defmodule BrodSink.ToyGroupTwoConsumer do
           group_config: [offset_commit_policy: :commit_to_kafka_v2, offset_commit_interval_seconds: 5],
           # ConsumerConfig
           consumer_config: [begin_offset: :earliest, offset_reset_policy: :reset_to_earliest],
+          # consumer_config: [begin_offset: :latest, offset_reset_policy: :reset_to_latest],
           # CbMod
           cb_module: __MODULE__,
           # CbInitArg
@@ -41,15 +42,14 @@ defmodule BrodSink.ToyGroupTwoConsumer do
 
   ## Per-Partition Callbacks
 
-  def init(init_info = %{partition: partition, topic: topic, commit_fun: commit_fun}, cb_config) do
+  def init(%{group_id: _group_id, topic: topic, partition: partition, commit_fun: commit_fun}, _cb_config) do
     Logger.metadata(partition_id: partition)
     Logger.info("Starting group subscriber v2, partition #{partition}, topic: #{topic}")
-    # Logger.info("Init Info: #{inspect(init_info)}, Cb Config: #{inspect(cb_config)}")
 
     {:ok, %{partition: partition, topic: topic, commit_fun: commit_fun}}
   end
 
-  def handle_message(kafka_message(offset: offset, key: key, ts: _ts) = message, state) do
+  def handle_message(kafka_message(offset: offset, key: _key, value: value, ts: _ts) = message, state) do
     message_record = kafka_message(message)
     Logger.metadata(offset: offset)
     Logger.info("received message #{inspect(message_record)}", [pid: self()])
@@ -57,25 +57,24 @@ defmodule BrodSink.ToyGroupTwoConsumer do
 
     %{partition: _partition, topic: _topic, commit_fun: commit_fun} = state
 
-    case key do
+    case value do
       "0" ->
         Logger.info("Committing with fun")
         commit_fun.(offset)
         {:ok, state}
       "1" ->
-        {:ok, :commit, state}
-      "2" ->
         # Commits
         {:ok, :commit, state}
-      "3" ->
+      "2" ->
         # Crashes app
         {:error}
-      "4" ->
+      "3" ->
         {:error, state}
-      "5" ->
+      "4" ->
         # Tell the consumer to do nothing, cb might be used.
         {:ok, state}
       _ ->
+        Logger.info("Committing unmatched value #{value}")
         {:ok, :commit, state}
     end
   end
